@@ -8,7 +8,7 @@ A production-ready NGINX Plus configuration that:
 - **Auto-expires** greylist entries — no cron job needed (NGINX Plus `keyval` TTL)
 - **Load-balances** HTTP/HTTPS upstreams
 
----
+For a native C implementation of this module (compatible with both NGINX open source and NGINX Plus) see [https://github.com/fabriziofiorucci/ngx_http_greylist_module](https://github.com/fabriziofiorucci/ngx_http_greylist_module)
 
 ## Architecture
 
@@ -68,8 +68,6 @@ A production-ready NGINX Plus configuration that:
     └── greylist.js              # NJS module (fingerprint + greylist logic)
 ```
 
----
-
 ## File Contents
 
 ### `nginx.conf`
@@ -116,8 +114,6 @@ http {
 }
 ```
 
----
-
 ### `conf.d/greylist_core.conf`
 
 ```nginx
@@ -158,8 +154,6 @@ keyval_zone  zone=greylist:16m
 # The result (expiry epoch string, or "") is stored in $greylist_entry.
 keyval  $client_fingerprint  $greylist_entry  zone=greylist;
 ```
-
----
 
 ### `conf.d/greylist_rules.conf`
 
@@ -231,8 +225,6 @@ map "$request_method:$scheme://$host$request_uri" $rl_key_r3 {
 limit_req_zone  $rl_key_r3  zone=rl_r3:10m  rate=2r/m;
 ```
 
----
-
 ### `conf.d/upstreams.conf`
 
 ```nginx
@@ -258,8 +250,6 @@ server {
     }
 }
 ```
-
----
 
 ### `conf.d/vhost.conf`
 
@@ -361,8 +351,6 @@ server {
     }
 }
 ```
-
----
 
 ### `njs/greylist.js`
 
@@ -528,8 +516,6 @@ function denyGreylisted(r) {
 export default { clientFingerprint, checkGreylist, addToGreylist, denyGreylisted };
 ```
 
----
-
 ## How to Run
 
 ### Option A — Standalone NGINX Plus
@@ -611,8 +597,6 @@ volumes:
 docker compose up --build
 ```
 
----
-
 ## How to Configure Rules
 
 ### Anatomy of a rule
@@ -670,8 +654,6 @@ limit_req  zone=rl_r4  burst=3  nodelay;
 sudo nginx -s reload
 ```
 
----
-
 ## Managing the Greylist
 
 The NGINX Plus REST API lets you inspect and manipulate the greylist at runtime — no reload needed.
@@ -719,8 +701,6 @@ curl -ks -X POST https://127.0.0.1/api/9/http/keyvals/greylist \
 
 > The API version in the path (`/api/9/`) matches your NGINX Plus version.
 > Check `/api/` for available versions.
-
----
 
 ## Testing
 
@@ -781,8 +761,6 @@ curl -s -o /dev/null -w "%{http_code}\n" -k \
 # → 200 (fresh counter for this fingerprint)
 ```
 
----
-
 ## How Auto-Expiry Works
 
 The greylist entry expires automatically through two independent mechanisms:
@@ -808,8 +786,6 @@ The greylist entry expires automatically through two independent mechanisms:
 1. **Logical expiry** — NJS compares `Date.now()` to the stored epoch. Once the timestamp is in the past, `checkGreylist()` returns 200 and the client is allowed through.  No restart or API call needed.
 
 2. **Memory GC** — The `keyval_zone timeout=3600s` directive causes NGINX Plus to evict any entry older than the timeout, reclaiming shared memory.
-
----
 
 ## Troubleshooting
 
